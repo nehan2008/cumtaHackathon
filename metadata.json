@@ -1,0 +1,6 @@
+{
+  "name": "TransitPulse",
+  "description": "AI-powered public transport operations and passenger demand analysis platform for CUMTA / MTC Chennai.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

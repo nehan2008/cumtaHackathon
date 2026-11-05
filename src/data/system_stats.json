@@ -1,0 +1,56 @@
+{
+  "total_etm_records_analyzed": 54000000,
+  "total_geocoded_bus_stops": 2717,
+  "total_mtc_routes_mapped": 1348,
+  "total_metro_stations": 33,
+  "total_suburban_stations": 70,
+  "fare_scheme_shares": {
+    "vidiyal_payanam_women_free": 45.1,
+    "cash_ordinary_and_express": 47.0,
+    "upi_digital_payments": 4.6,
+    "ncmc_contactless_card": 1.1,
+    "senior_citizen_and_concessions": 2.2
+  },
+  "top_depots_by_demand": [
+    {
+      "name": "Tambaram Depot",
+      "volume_share": 10.1,
+      "fleet_size": 185
+    },
+    {
+      "name": "Poonamallee Depot",
+      "volume_share": 6.7,
+      "fleet_size": 142
+    },
+    {
+      "name": "Vadapalani Depot",
+      "volume_share": 5.8,
+      "fleet_size": 130
+    },
+    {
+      "name": "Adyar Depot",
+      "volume_share": 5.4,
+      "fleet_size": 125
+    },
+    {
+      "name": "Kilambakkam (KCBT) Depot",
+      "volume_share": 5.3,
+      "fleet_size": 135
+    },
+    {
+      "name": "Ayanavaram Depot",
+      "volume_share": 4.9,
+      "fleet_size": 118
+    },
+    {
+      "name": "Anna Nagar Depot",
+      "volume_share": 4.8,
+      "fleet_size": 115
+    },
+    {
+      "name": "T. Nagar Depot",
+      "volume_share": 4.6,
+      "fleet_size": 110
+    }
+  ]
+}

@@ -1,0 +1,329 @@
+{
+  "hourly": [
+    {
+      "hour": 5,
+      "label": "05:00",
+      "weekday_boardings": 207542,
+      "weekend_boardings": 165269,
+      "city_capacity": 180000,
+      "pressure_index": 98,
+      "is_peak": false
+    },
+    {
+      "hour": 6,
+      "label": "06:00",
+      "weekday_boardings": 237348,
+      "weekend_boardings": 174727,
+      "city_capacity": 180000,
+      "pressure_index": 100,
+      "is_peak": false
+    },
+    {
+      "hour": 7,
+      "label": "07:00",
+      "weekday_boardings": 294796,
+      "weekend_boardings": 170862,
+      "city_capacity": 240000,
+      "pressure_index": 100,
+      "is_peak": false
+    },
+    {
+      "hour": 8,
+      "label": "08:00",
+      "weekday_boardings": 333764,
+      "weekend_boardings": 195076,
+      "city_capacity": 240000,
+      "pressure_index": 100,
+      "is_peak": true
+    },
+    {
+      "hour": 9,
+      "label": "09:00",
+      "weekday_boardings": 332032,
+      "weekend_boardings": 203131,
+      "city_capacity": 240000,
+      "pressure_index": 100,
+      "is_peak": true
+    },
+    {
+      "hour": 10,
+      "label": "10:00",
+      "weekday_boardings": 258184,
+      "weekend_boardings": 188424,
+      "city_capacity": 240000,
+      "pressure_index": 91,
+      "is_peak": true
+    },
+    {
+      "hour": 11,
+      "label": "11:00",
+      "weekday_boardings": 214099,
+      "weekend_boardings": 175610,
+      "city_capacity": 180000,
+      "pressure_index": 100,
+      "is_peak": false
+    },
+    {
+      "hour": 12,
+      "label": "12:00",
+      "weekday_boardings": 175699,
+      "weekend_boardings": 127800,
+      "city_capacity": 180000,
+      "pressure_index": 82,
+      "is_peak": false
+    },
+    {
+      "hour": 13,
+      "label": "13:00",
+      "weekday_boardings": 128549,
+      "weekend_boardings": 112436,
+      "city_capacity": 180000,
+      "pressure_index": 60,
+      "is_peak": false
+    },
+    {
+      "hour": 14,
+      "label": "14:00",
+      "weekday_boardings": 133921,
+      "weekend_boardings": 128860,
+      "city_capacity": 180000,
+      "pressure_index": 63,
+      "is_peak": false
+    },
+    {
+      "hour": 15,
+      "label": "15:00",
+      "weekday_boardings": 130202,
+      "weekend_boardings": 125200,
+      "city_capacity": 180000,
+      "pressure_index": 61,
+      "is_peak": false
+    },
+    {
+      "hour": 16,
+      "label": "16:00",
+      "weekday_boardings": 130302,
+      "weekend_boardings": 135581,
+      "city_capacity": 180000,
+      "pressure_index": 61,
+      "is_peak": false
+    },
+    {
+      "hour": 17,
+      "label": "17:00",
+      "weekday_boardings": 150463,
+      "weekend_boardings": 140476,
+      "city_capacity": 240000,
+      "pressure_index": 53,
+      "is_peak": true
+    },
+    {
+      "hour": 18,
+      "label": "18:00",
+      "weekday_boardings": 157368,
+      "weekend_boardings": 132834,
+      "city_capacity": 240000,
+      "pressure_index": 55,
+      "is_peak": true
+    },
+    {
+      "hour": 19,
+      "label": "19:00",
+      "weekday_boardings": 118954,
+      "weekend_boardings": 99446,
+      "city_capacity": 240000,
+      "pressure_index": 42,
+      "is_peak": true
+    },
+    {
+      "hour": 20,
+      "label": "20:00",
+      "weekday_boardings": 64757,
+      "weekend_boardings": 32445,
+      "city_capacity": 240000,
+      "pressure_index": 22,
+      "is_peak": false
+    },
+    {
+      "hour": 21,
+      "label": "21:00",
+      "weekday_boardings": 18188,
+      "weekend_boardings": 7319,
+      "city_capacity": 180000,
+      "pressure_index": 8,
+      "is_peak": false
+    },
+    {
+      "hour": 22,
+      "label": "22:00",
+      "weekday_boardings": 4470,
+      "weekend_boardings": 735,
+      "city_capacity": 180000,
+      "pressure_index": 2,
+      "is_peak": false
+    },
+    {
+      "hour": 23,
+      "label": "23:00",
+      "weekday_boardings": 127,
+      "weekend_boardings": 0,
+      "city_capacity": 180000,
+      "pressure_index": 0,
+      "is_peak": false
+    }
+  ],
+  "corridors": [
+    {
+      "id": "corridor_omr",
+      "name": "OMR IT Expressway Corridor",
+      "primary_routes": [
+        "570",
+        "19B",
+        "102",
+        "570S"
+      ],
+      "from_hub": "CMBT / Koyambedu & T. Nagar",
+      "to_hub": "Tidel Park, Sholinganallur, Siruseri IT Park, Kelambakkam",
+      "length_km": 34.5,
+      "peak_hourly_boardings": 38500,
+      "bus_fleet_allocated": 165,
+      "risk_score": 88,
+      "risk_level": "critical",
+      "overcrowding_factor": 1.42,
+      "metro_parallel": "Phase 2 Line 3 (Under Construction - Heavy Bus Reliance)",
+      "key_bottlenecks": [
+        "Madhya Kailash Jn",
+        "Thoraipakkam Jn",
+        "Sholinganallur Signal"
+      ],
+      "vidiyal_payanam_share": 43.2
+    },
+    {
+      "id": "corridor_gst",
+      "name": "GST Road Trunk Corridor",
+      "primary_routes": [
+        "21G",
+        "70V",
+        "500",
+        "91",
+        "E18"
+      ],
+      "from_hub": "Kilambakkam (KCBT) & Tambaram",
+      "to_hub": "Guindy, Saidapet, Broadway & CMBT",
+      "length_km": 31.0,
+      "peak_hourly_boardings": 46200,
+      "bus_fleet_allocated": 210,
+      "risk_score": 82,
+      "risk_level": "high",
+      "overcrowding_factor": 1.34,
+      "metro_parallel": "Chennai Metro Blue Line & Suburban South Line",
+      "key_bottlenecks": [
+        "Guindy Kathipara Jn",
+        "Chromepet Flyover",
+        "Tambaram Sanatorium"
+      ],
+      "vidiyal_payanam_share": 47.8
+    },
+    {
+      "id": "corridor_irr",
+      "name": "Inner Ring Road (100 Ft Rd)",
+      "primary_routes": [
+        "70V",
+        "114",
+        "66",
+        "48C"
+      ],
+      "from_hub": "Koyambedu (CMBT)",
+      "to_hub": "Vadapalani, Ashok Pillar, Guindy, St. Thomas Mount",
+      "length_km": 18.2,
+      "peak_hourly_boardings": 29800,
+      "bus_fleet_allocated": 140,
+      "risk_score": 74,
+      "risk_level": "high",
+      "overcrowding_factor": 1.25,
+      "metro_parallel": "Chennai Metro Green Line (Elevated on 100ft Rd)",
+      "key_bottlenecks": [
+        "Vadapalani Jn",
+        "Ashok Pillar Roundabout",
+        "CIPET Jn Guindy"
+      ],
+      "vidiyal_payanam_share": 46.5
+    },
+    {
+      "id": "corridor_anna_salai",
+      "name": "Anna Salai / Mount Road Spine",
+      "primary_routes": [
+        "A1",
+        "18A",
+        "23C",
+        "25G",
+        "B29"
+      ],
+      "from_hub": "Broadway / Chennai Central",
+      "to_hub": "DMS, Nandanam, Saidapet, Guindy",
+      "length_km": 15.0,
+      "peak_hourly_boardings": 24500,
+      "bus_fleet_allocated": 120,
+      "risk_score": 58,
+      "risk_level": "moderate",
+      "overcrowding_factor": 1.08,
+      "metro_parallel": "Chennai Metro Blue Line (Underground with frequent 4-min headway)",
+      "key_bottlenecks": [
+        "Simpsons Jn",
+        "Thousand Lights",
+        "Saidapet Panagal Building"
+      ],
+      "vidiyal_payanam_share": 48.1
+    },
+    {
+      "id": "corridor_phr",
+      "name": "Poonamallee High Road & West Radial",
+      "primary_routes": [
+        "54",
+        "88K",
+        "27B",
+        "159"
+      ],
+      "from_hub": "Broadway & Central",
+      "to_hub": "Kilpauk, Aminjikarai, Koyambedu, Poonamallee",
+      "length_km": 22.0,
+      "peak_hourly_boardings": 26400,
+      "bus_fleet_allocated": 130,
+      "risk_score": 68,
+      "risk_level": "moderate",
+      "overcrowding_factor": 1.18,
+      "metro_parallel": "Phase 2 Line 4 (Under construction towards Poonamallee)",
+      "key_bottlenecks": [
+        "Aminjikarai Market",
+        "Koyambedu Roundabout",
+        "Porur Jn"
+      ],
+      "vidiyal_payanam_share": 51.2
+    },
+    {
+      "id": "corridor_north",
+      "name": "North Chennai & Ennore Express",
+      "primary_routes": [
+        "1C",
+        "1D",
+        "159",
+        "29C"
+      ],
+      "from_hub": "Broadway / High Court",
+      "to_hub": "Washermanpet, Tollgate, Tiruvottiyur, Ennore",
+      "length_km": 20.5,
+      "peak_hourly_boardings": 21000,
+      "bus_fleet_allocated": 105,
+      "risk_score": 62,
+      "risk_level": "moderate",
+      "overcrowding_factor": 1.12,
+      "metro_parallel": "Metro Blue Line Extension (Washermanpet to Wimco Nagar)",
+      "key_bottlenecks": [
+        "Tollgate Jn",
+        "Theradi",
+        "Ennore Express Highway"
+      ],
+      "vidiyal_payanam_share": 52.4
+    }
+  ]
+}
