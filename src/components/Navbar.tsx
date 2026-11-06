@@ -48,12 +48,12 @@ export const Navbar: React.FC<NavbarProps> = ({
   return (
     <header className="bg-slate-900 border-b border-slate-800 text-white sticky top-0 z-50 shadow-lg">
       {/* Top Banner */}
-      <div className="max-w-7xl mx-auto px-4 py-2.5 flex flex-wrap items-center justify-between gap-4">
+      <div className="w-full max-w-[1680px] mx-auto px-3 sm:px-6 py-2.5 flex flex-wrap items-center justify-between gap-3 sm:gap-4">
         {/* Brand & CUMTA Badge */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 shrink-0">
           <div
             onClick={() => onNavigatePortal("landing")}
-            className="w-10 h-10 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-400 flex items-center justify-center shadow-md shadow-emerald-950 cursor-pointer"
+            className="w-10 h-10 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-400 flex items-center justify-center shadow-md shadow-emerald-950 cursor-pointer shrink-0"
             title="Return to Main Landing Page"
           >
             <Bus className="w-6 h-6 text-slate-950 stroke-[2.5]" />
@@ -66,7 +66,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               >
                 Transit<span className="text-emerald-400">Pulse</span>
               </button>
-              <span className="text-[10px] font-semibold uppercase tracking-wider bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2 py-0.5 rounded-full">
+              <span className="text-[10px] font-semibold uppercase tracking-wider bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2 py-0.5 rounded-full shrink-0">
                 Control Room
               </span>
             </div>
@@ -76,19 +76,19 @@ export const Navbar: React.FC<NavbarProps> = ({
           </div>
         </div>
 
-        {/* Portal Switcher Buttons */}
-        <div className="flex items-center gap-1 bg-slate-950/80 p-1 rounded-xl border border-slate-800 text-xs">
+        {/* Portal Switcher Buttons - Guaranteed Fully Visible and Unclipped */}
+        <div className="flex items-center gap-1 bg-slate-950/80 p-1 rounded-xl border border-slate-800 text-xs shrink-0">
           <button
             onClick={() => onNavigatePortal("landing")}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition flex items-center gap-1"
+            className="px-2 py-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition flex items-center gap-1 shrink-0"
             title="Landing Page"
           >
             <Home className="w-3.5 h-3.5" />
-            <span className="hidden xl:inline">Home</span>
+            <span>Home</span>
           </button>
           <button
             onClick={() => onNavigatePortal("passenger")}
-            className="px-2.5 py-1 rounded-lg text-slate-300 hover:text-emerald-300 hover:bg-slate-800 transition flex items-center gap-1.5 font-medium"
+            className="px-2.5 py-1 rounded-lg text-slate-300 hover:text-emerald-300 hover:bg-slate-800 transition flex items-center gap-1.5 font-medium shrink-0"
             title="Switch to Public Passenger Portal"
           >
             <Users className="w-3.5 h-3.5 text-emerald-400" />
@@ -96,7 +96,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           </button>
           <button
             onClick={() => onNavigatePortal("display")}
-            className="px-2.5 py-1 rounded-lg text-slate-300 hover:text-amber-300 hover:bg-slate-800 transition flex items-center gap-1.5 font-medium"
+            className="px-2.5 py-1 rounded-lg text-slate-300 hover:text-amber-300 hover:bg-slate-800 transition flex items-center gap-1.5 font-medium shrink-0"
             title="Switch to Bus Stop Passenger Info Board"
           >
             <Tv className="w-3.5 h-3.5 text-amber-400" />
@@ -219,13 +219,13 @@ export const Navbar: React.FC<NavbarProps> = ({
         </div>
       </div>
 
-      {/* Control Room View Sub-Tabs */}
-      <div className="max-w-7xl mx-auto px-4 flex flex-wrap items-center gap-1 text-xs font-medium border-t border-slate-800/80 py-1.5 pb-2">
+      {/* Control Room View Sub-Tabs - Multi-row responsive wrapping with full visibility */}
+      <div className="w-full max-w-[1680px] mx-auto px-3 sm:px-6 flex flex-wrap items-center gap-1.5 sm:gap-2 text-xs font-medium border-t border-slate-800/80 py-2">
         <button
           onClick={() => setActiveTab("overview")}
-          className={`px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition whitespace-nowrap ${
+          className={`px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition whitespace-nowrap shrink-0 ${
             activeTab === "overview"
-              ? "bg-slate-800 text-emerald-400 border border-slate-700 shadow"
+              ? "bg-slate-800 text-emerald-400 border border-slate-700 shadow font-semibold"
               : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/50"
           }`}
         >
@@ -235,9 +235,9 @@ export const Navbar: React.FC<NavbarProps> = ({
 
         <button
           onClick={() => setActiveTab("map")}
-          className={`px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition whitespace-nowrap ${
+          className={`px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition whitespace-nowrap shrink-0 ${
             activeTab === "map"
-              ? "bg-slate-800 text-emerald-400 border border-slate-700 shadow"
+              ? "bg-slate-800 text-emerald-400 border border-slate-700 shadow font-semibold"
               : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/50"
           }`}
         >
@@ -247,9 +247,9 @@ export const Navbar: React.FC<NavbarProps> = ({
 
         <button
           onClick={() => setActiveTab("occupancy")}
-          className={`px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition whitespace-nowrap ${
+          className={`px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition whitespace-nowrap shrink-0 ${
             activeTab === "occupancy"
-              ? "bg-slate-800 text-emerald-400 border border-slate-700 shadow"
+              ? "bg-slate-800 text-emerald-400 border border-slate-700 shadow font-semibold"
               : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/50"
           }`}
         >
@@ -259,9 +259,9 @@ export const Navbar: React.FC<NavbarProps> = ({
 
         <button
           onClick={() => setActiveTab("communication")}
-          className={`px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition whitespace-nowrap ${
+          className={`px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition whitespace-nowrap shrink-0 ${
             activeTab === "communication"
-              ? "bg-slate-800 text-cyan-400 border border-slate-700 shadow"
+              ? "bg-slate-800 text-cyan-400 border border-slate-700 shadow font-semibold"
               : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/50"
           }`}
         >
@@ -271,9 +271,9 @@ export const Navbar: React.FC<NavbarProps> = ({
 
         <button
           onClick={() => setActiveTab("multimodal")}
-          className={`px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition whitespace-nowrap ${
+          className={`px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition whitespace-nowrap shrink-0 ${
             activeTab === "multimodal"
-              ? "bg-slate-800 text-teal-400 border border-slate-700 shadow"
+              ? "bg-slate-800 text-teal-400 border border-slate-700 shadow font-semibold"
               : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/50"
           }`}
         >
@@ -283,9 +283,9 @@ export const Navbar: React.FC<NavbarProps> = ({
 
         <button
           onClick={() => setActiveTab("ticketing")}
-          className={`px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition whitespace-nowrap ${
+          className={`px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition whitespace-nowrap shrink-0 ${
             activeTab === "ticketing"
-              ? "bg-slate-800 text-amber-400 border border-slate-700 shadow"
+              ? "bg-slate-800 text-amber-400 border border-slate-700 shadow font-semibold"
               : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/50"
           }`}
         >
@@ -295,9 +295,9 @@ export const Navbar: React.FC<NavbarProps> = ({
 
         <button
           onClick={() => setActiveTab("ai_prediction")}
-          className={`px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition whitespace-nowrap ${
+          className={`px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition whitespace-nowrap shrink-0 ${
             activeTab === "ai_prediction"
-              ? "bg-slate-800 text-purple-400 border border-slate-700 shadow"
+              ? "bg-slate-800 text-purple-400 border border-slate-700 shadow font-semibold"
               : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/50"
           }`}
         >
@@ -307,9 +307,9 @@ export const Navbar: React.FC<NavbarProps> = ({
 
         <button
           onClick={() => setActiveTab("feedback")}
-          className={`px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition whitespace-nowrap ${
+          className={`px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition whitespace-nowrap shrink-0 ${
             activeTab === "feedback"
-              ? "bg-slate-800 text-emerald-400 border border-slate-700 shadow"
+              ? "bg-slate-800 text-emerald-400 border border-slate-700 shadow font-semibold"
               : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/50"
           }`}
         >
@@ -319,9 +319,9 @@ export const Navbar: React.FC<NavbarProps> = ({
 
         <button
           onClick={() => setActiveTab("corridors")}
-          className={`px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition whitespace-nowrap ${
+          className={`px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition whitespace-nowrap shrink-0 ${
             activeTab === "corridors"
-              ? "bg-slate-800 text-emerald-400 border border-slate-700 shadow"
+              ? "bg-slate-800 text-emerald-400 border border-slate-700 shadow font-semibold"
               : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/50"
           }`}
         >
@@ -331,9 +331,9 @@ export const Navbar: React.FC<NavbarProps> = ({
 
         <button
           onClick={() => setActiveTab("simulator")}
-          className={`px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition whitespace-nowrap ${
+          className={`px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition whitespace-nowrap shrink-0 ${
             activeTab === "simulator"
-              ? "bg-slate-800 text-amber-400 border border-slate-700 shadow"
+              ? "bg-slate-800 text-amber-400 border border-slate-700 shadow font-semibold"
               : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/50"
           }`}
         >

@@ -46,7 +46,7 @@ export const OperationalActions: React.FC<OperationalActionsProps> = ({
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 gap-3.5">
         {actions.map((act) => {
           const isCritical = act.priority === "critical";
           const isDeployed = act.status === "deployed";

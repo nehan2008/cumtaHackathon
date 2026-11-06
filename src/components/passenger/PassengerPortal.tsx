@@ -54,7 +54,6 @@ export const PassengerPortal: React.FC<PassengerPortalProps> = ({
   // Sample real bus schedule data with predicted crowd levels
   const scheduledBuses = useMemo(() => {
     const isPeak = (currentHour >= 8 && currentHour <= 10) || (currentHour >= 17 && currentHour <= 19);
-    const weatherMult = weather.demand_multiplier;
 
     return [
       {
@@ -63,7 +62,7 @@ export const PassengerPortal: React.FC<PassengerPortalProps> = ({
         origin: "CMBT (Koyambedu)",
         destination: "Kelambakkam (via OMR IT Expressway)",
         next_etas: [4, 14, 26],
-        base_crowd: isPeak ? 85 : 55,
+        base_crowd: isPeak ? 86 : 52, // Heavily Crowded during peak
         fare_type: "Standard Fare / AC",
         primary_stops: ["Vadapalani", "Guindy", "Madhya Kailash", "Tidel Park", "Thoraipakkam", "Sholinganallur", "Siruseri IT Park"],
         alternative: {
@@ -84,7 +83,7 @@ export const PassengerPortal: React.FC<PassengerPortalProps> = ({
         origin: "Broadway / Central",
         destination: "Tambaram (via GST Road & Mount Road)",
         next_etas: [2, 9, 18],
-        base_crowd: isPeak ? 92 : 62,
+        base_crowd: isPeak ? 90 : 56, // Heavily Crowded during peak
         fare_type: "Zero-Fare for Women / Ordinary",
         primary_stops: ["Central", "LIC", "DMS", "Saidapet", "Guindy", "Chromepet", "Tambaram"],
         alternative: {
@@ -105,7 +104,7 @@ export const PassengerPortal: React.FC<PassengerPortalProps> = ({
         origin: "CMBT (Koyambedu)",
         destination: "Vandalur Zoo / Tambaram (via 100 Ft Rd)",
         next_etas: [7, 19, 31],
-        base_crowd: isPeak ? 78 : 50,
+        base_crowd: isPeak ? 64 : 40, // Moderate Rush during peak
         fare_type: "Deluxe Service",
         primary_stops: ["CMBT", "Arumbakkam", "Vadapalani", "Ashok Pillar", "Ekkattuthangal", "Guindy", "Pallavaram"],
         alternative: {
@@ -126,7 +125,7 @@ export const PassengerPortal: React.FC<PassengerPortalProps> = ({
         origin: "Kilambakkam (KCBT)",
         destination: "Chengalpattu & Tambaram",
         next_etas: [5, 12, 22],
-        base_crowd: isPeak ? 88 : 58,
+        base_crowd: isPeak ? 58 : 36, // Moderate Rush during peak
         fare_type: "Express Service",
         primary_stops: ["KCBT Bus Terminus", "Vandalur", "Perungalathur", "Tambaram"],
         alternative: {
@@ -147,7 +146,7 @@ export const PassengerPortal: React.FC<PassengerPortalProps> = ({
         origin: "Thiruvanmiyur (ECR)",
         destination: "Tambaram (via Velachery 100ft Rd)",
         next_etas: [6, 17, 28],
-        base_crowd: isPeak ? 82 : 52,
+        base_crowd: isPeak ? 36 : 22, // Comfortable / Seats Available
         fare_type: "Zero-Fare for Women",
         primary_stops: ["Thiruvanmiyur", "Taramani", "Velachery", "Madipakkam", "Chromepet", "Tambaram"],
         alternative: {
@@ -168,7 +167,7 @@ export const PassengerPortal: React.FC<PassengerPortalProps> = ({
         origin: "Chennai Central Station",
         destination: "Thiruvanmiyur (via Marina Beach & Adyar)",
         next_etas: [3, 11, 21],
-        base_crowd: isPeak ? 70 : 45,
+        base_crowd: isPeak ? 28 : 16, // Comfortable / Seats Available
         fare_type: "Zero-Fare for Women",
         primary_stops: ["Central", "Island Ground", "Queen Marys College", "Santhome", "Adyar", "Thiruvanmiyur"],
         alternative: {
@@ -184,7 +183,7 @@ export const PassengerPortal: React.FC<PassengerPortalProps> = ({
         },
       },
     ];
-  }, [currentHour, weather.demand_multiplier]);
+  }, [currentHour]);
 
   // Filtered by search and category
   const filteredBuses = useMemo(() => {
@@ -216,8 +215,10 @@ export const PassengerPortal: React.FC<PassengerPortalProps> = ({
 
   // Helper for crowd level badge
   const getCrowdBadge = (rawScore: number) => {
-    const adjusted = Math.min(100, Math.round(rawScore * weather.demand_multiplier));
-    if (adjusted >= 85) {
+    // Weather causes moderate outdoor transit surge (half of weather multiplier)
+    const weatherFactor = weather.demand_multiplier > 1.0 ? 1 + (weather.demand_multiplier - 1) * 0.4 : 1.0;
+    const adjusted = Math.min(100, Math.round(rawScore * weatherFactor));
+    if (adjusted >= 80) {
       return {
         level: "Heavily Crowded",
         subtext: "Crush load expected / Standing room only",
@@ -225,7 +226,7 @@ export const PassengerPortal: React.FC<PassengerPortalProps> = ({
         score: adjusted,
       };
     }
-    if (adjusted >= 65) {
+    if (adjusted >= 50) {
       return {
         level: "Moderate Rush",
         subtext: "Few seats remaining / Regular standing load",
@@ -234,8 +235,8 @@ export const PassengerPortal: React.FC<PassengerPortalProps> = ({
       };
     }
     return {
-      level: "Comfortable",
-      subtext: "Seats readily available",
+      level: "Seats Available",
+      subtext: "Comfortable / Uncrowded boarding",
       color: "bg-emerald-500/20 text-emerald-300 border-emerald-500/30",
       score: adjusted,
     };

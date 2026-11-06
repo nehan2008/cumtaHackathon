@@ -285,7 +285,7 @@ export default function App() {
       />
 
       {/* Main Content Area */}
-      <main className="flex-1 max-w-[1400px] w-full mx-auto p-3 sm:p-5 space-y-4">
+      <main className="flex-1 max-w-[1680px] w-full mx-auto px-3 sm:px-6 py-4 space-y-5">
         {/* KPI Banner */}
         <KPICards
           currentDemand={currentDemand}
@@ -307,11 +307,11 @@ export default function App() {
 
         {/* Tab 1: Overview (Control Room Main View) */}
         {activeTab === "overview" && (
-          <div className="space-y-4 animate-in fade-in duration-200">
+          <div className="space-y-5 animate-in fade-in duration-200">
             {/* Top Split: Interactive Map + Action Directives */}
-            <div className="grid grid-cols-1 xl:grid-cols-12 gap-4 items-start">
-              {/* Map Canvas (8 cols on desktop) */}
-              <div className="xl:col-span-8 space-y-2">
+            <div className="grid grid-cols-1 xl:grid-cols-12 gap-5 items-start">
+              {/* Map Canvas (7 cols on desktop) */}
+              <div className="xl:col-span-7 space-y-2">
                 <div className="flex items-center justify-between">
                   <h2 className="text-sm font-bold text-white flex items-center gap-2">
                     <Layers className="w-4 h-4 text-emerald-400" />
@@ -340,8 +340,8 @@ export default function App() {
                 />
               </div>
 
-              {/* Action Directives & Audit Trail (4 cols on desktop) */}
-              <div className="xl:col-span-4 space-y-3">
+              {/* Action Directives & Audit Trail (5 cols on desktop) */}
+              <div className="xl:col-span-5 space-y-4">
                 <OperationalActions
                   actions={actions}
                   onDeployAction={handleDeployAction}
