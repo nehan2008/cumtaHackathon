@@ -4,6 +4,7 @@ import { PassengerPortal } from "./components/passenger/PassengerPortal";
 import { BusStopDisplay } from "./components/display/BusStopDisplay";
 import { Navbar } from "./components/Navbar";
 import { KPICards } from "./components/KPICards";
+import { GaugeKPIs } from "./components/GaugeKPIs";
 import { MapLibreView } from "./components/MapLibreView";
 import { DemandCharts } from "./components/DemandCharts";
 import { CorridorAnalytics } from "./components/CorridorAnalytics";
@@ -284,7 +285,7 @@ export default function App() {
       />
 
       {/* Main Content Area */}
-      <main className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 space-y-6">
+      <main className="flex-1 max-w-[1400px] w-full mx-auto p-3 sm:p-5 space-y-4">
         {/* KPI Banner */}
         <KPICards
           currentDemand={currentDemand}
@@ -294,13 +295,23 @@ export default function App() {
           weather={weather}
         />
 
+        {/* Gauge KPIs – Overview tab only */}
+        {activeTab === "overview" && (
+          <GaugeKPIs
+            currentDemand={currentDemand}
+            corridors={corridors}
+            dayType={dayType}
+            weather={weather}
+          />
+        )}
+
         {/* Tab 1: Overview (Control Room Main View) */}
         {activeTab === "overview" && (
-          <div className="space-y-6 animate-in fade-in duration-200">
+          <div className="space-y-4 animate-in fade-in duration-200">
             {/* Top Split: Interactive Map + Action Directives */}
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-              {/* Map Canvas (7 cols on desktop) */}
-              <div className="lg:col-span-7 space-y-2">
+            <div className="grid grid-cols-1 xl:grid-cols-12 gap-4 items-start">
+              {/* Map Canvas (8 cols on desktop) */}
+              <div className="xl:col-span-8 space-y-2">
                 <div className="flex items-center justify-between">
                   <h2 className="text-sm font-bold text-white flex items-center gap-2">
                     <Layers className="w-4 h-4 text-emerald-400" />
@@ -329,8 +340,8 @@ export default function App() {
                 />
               </div>
 
-              {/* Action Directives & Audit Trail (5 cols on desktop) */}
-              <div className="lg:col-span-5 space-y-4">
+              {/* Action Directives & Audit Trail (4 cols on desktop) */}
+              <div className="xl:col-span-4 space-y-3">
                 <OperationalActions
                   actions={actions}
                   onDeployAction={handleDeployAction}

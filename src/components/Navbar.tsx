@@ -220,7 +220,7 @@ export const Navbar: React.FC<NavbarProps> = ({
       </div>
 
       {/* Control Room View Sub-Tabs */}
-      <div className="max-w-7xl mx-auto px-4 flex items-center gap-1.5 overflow-x-auto text-xs font-medium border-t border-slate-800/80 py-1.5 scrollbar-none">
+      <div className="max-w-7xl mx-auto px-4 flex flex-wrap items-center gap-1 text-xs font-medium border-t border-slate-800/80 py-1.5 pb-2">
         <button
           onClick={() => setActiveTab("overview")}
           className={`px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition whitespace-nowrap ${
