@@ -5,7 +5,7 @@ import { BusStopDisplay } from "./components/display/BusStopDisplay";
 import { Navbar } from "./components/Navbar";
 import { KPICards } from "./components/KPICards";
 import { GaugeKPIs } from "./components/GaugeKPIs";
-import { MapLibreView } from "./components/MapLibreView";
+import { GoogleMapsView } from "./components/GoogleMapsView";
 import { DemandCharts } from "./components/DemandCharts";
 import { CorridorAnalytics } from "./components/CorridorAnalytics";
 import { OperationalActions } from "./components/OperationalActions";
@@ -17,6 +17,8 @@ import { MultimodalPlanner } from "./components/multimodal/MultimodalPlanner";
 import { UnifiedTicketing } from "./components/ticketing/UnifiedTicketing";
 import { AIPredictionModule } from "./components/analytics/AIPredictionModule";
 import { TransitChatbot } from "./components/chatbot/TransitChatbot";
+import { INITIAL_DRIVER_INCIDENTS } from "./data/initial_incidents";
+import type { DriverIncidentReport } from "./types/communication";
 
 
 import {
@@ -98,6 +100,114 @@ export default function App() {
       text: "System initialized with 54M historical ETM ticket records & Chennai GIS layers.",
     },
   ]);
+
+  // Driver Incidents & Shuttle Workflow State
+  const [driverIncidents, setDriverIncidents] = useState<DriverIncidentReport[]>(INITIAL_DRIVER_INCIDENTS);
+
+  const handleAddIncident = (newReport: DriverIncidentReport) => {
+    setDriverIncidents((prev) => [newReport, ...prev]);
+    setAuditLog((prev) => [
+      {
+        id: `LOG-INC-${Date.now().toString().slice(-4)}`,
+        time: newReport.timestamp,
+        text: `Driver Incident Reported: Route ${newReport.routeNum} (${newReport.busId}) at ${newReport.location}. Severity: ${newReport.severity}.`,
+      },
+      ...prev,
+    ]);
+  };
+
+  const handleApproveShuttle = (
+    incidentId: string,
+    officerName: string,
+    officerBadge: string,
+    notes?: string
+  ) => {
+    const now = new Date();
+    const timeStr = now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+
+    setDriverIncidents((prev) =>
+      prev.map((inc) => {
+        if (inc.id !== incidentId) return inc;
+        return {
+          ...inc,
+          dispatchStatus: "SHUTTLE_APPROVED",
+          officialReview: {
+            officerName,
+            officerBadge,
+            decision: "APPROVED",
+            reviewTimestamp: timeStr,
+            notes,
+          },
+          auditTrail: [
+            ...inc.auditTrail,
+            {
+              id: `AUD-APP-${Date.now().toString().slice(-4)}`,
+              timestamp: timeStr,
+              action: "Official Shuttle Deployment Authorized",
+              actor: `${officerName} (${officerBadge})`,
+              details: notes || "Relief shuttle order dispatched to standby depot",
+            },
+          ],
+        };
+      })
+    );
+
+    const target = driverIncidents.find((i) => i.id === incidentId);
+    setAuditLog((prev) => [
+      {
+        id: `LOG-APP-${Date.now().toString().slice(-4)}`,
+        time: timeStr,
+        text: `Official Sign-Off: Shuttle deployment approved by ${officerName} (${officerBadge}) for Route ${target?.routeNum ?? incidentId}.`,
+      },
+      ...prev,
+    ]);
+  };
+
+  const handleRejectShuttle = (
+    incidentId: string,
+    officerName: string,
+    officerBadge: string,
+    reason: string
+  ) => {
+    const now = new Date();
+    const timeStr = now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+
+    setDriverIncidents((prev) =>
+      prev.map((inc) => {
+        if (inc.id !== incidentId) return inc;
+        return {
+          ...inc,
+          dispatchStatus: "SHUTTLE_REJECTED",
+          officialReview: {
+            officerName,
+            officerBadge,
+            decision: "REJECTED",
+            rejectionReason: reason,
+            reviewTimestamp: timeStr,
+          },
+          auditTrail: [
+            ...inc.auditTrail,
+            {
+              id: `AUD-REJ-${Date.now().toString().slice(-4)}`,
+              timestamp: timeStr,
+              action: "Shuttle Recommendation Rejected",
+              actor: `${officerName} (${officerBadge})`,
+              details: `Operational justification: ${reason}`,
+            },
+          ],
+        };
+      })
+    );
+
+    setAuditLog((prev) => [
+      {
+        id: `LOG-REJ-${Date.now().toString().slice(-4)}`,
+        time: timeStr,
+        text: `Official Sign-Off: Shuttle recommendation rejected by ${officerName} (${officerBadge}). Reason: ${reason}.`,
+      },
+      ...prev,
+    ]);
+  };
 
   // Load Data & Weather on Mount
   useEffect(() => {
@@ -286,51 +396,44 @@ export default function App() {
 
       {/* Main Content Area */}
       <main className="flex-1 max-w-[1680px] w-full mx-auto px-3 sm:px-6 py-4 space-y-5">
-        {/* KPI Banner */}
-        <KPICards
-          currentDemand={currentDemand}
-          corridors={corridors}
-          actions={actions}
-          dayType={dayType}
-          weather={weather}
-        />
-
-        {/* Gauge KPIs – Overview tab only */}
-        {activeTab === "overview" && (
-          <GaugeKPIs
-            currentDemand={currentDemand}
-            corridors={corridors}
-            dayType={dayType}
-            weather={weather}
-          />
-        )}
-
-        {/* Tab 1: Overview (Control Room Main View) */}
+        {/* Tab 1: Overview (Control Room Main View) - Global KPIs and Gauges restricted to Overview only */}
         {activeTab === "overview" && (
           <div className="space-y-5 animate-in fade-in duration-200">
+            {/* KPI Cards Banner */}
+            <KPICards
+              currentDemand={currentDemand}
+              corridors={corridors}
+              actions={actions}
+              dayType={dayType}
+              weather={weather}
+            />
+
+            {/* Gauge KPIs */}
+            <GaugeKPIs
+              currentDemand={currentDemand}
+              corridors={corridors}
+              dayType={dayType}
+              weather={weather}
+            />
+
             {/* Top Split: Interactive Map + Action Directives */}
-            <div className="grid grid-cols-1 xl:grid-cols-12 gap-5 items-start">
+            <div className="grid grid-cols-1 xl:grid-cols-12 gap-5 items-stretch">
               {/* Map Canvas (7 cols on desktop) */}
-              <div className="xl:col-span-7 space-y-2">
+              <div className="xl:col-span-7 flex flex-col space-y-2">
                 <div className="flex items-center justify-between">
                   <h2 className="text-sm font-bold text-white flex items-center gap-2">
                     <Layers className="w-4 h-4 text-emerald-400" />
-                    Chennai Multimodal Network Visualizer
+                    Chennai Multimodal Network Visualizer (Google Maps Platform)
                   </h2>
-                  <button
-                    onClick={() => setActiveTab("map")}
-                    className="text-xs text-emerald-400 hover:text-emerald-300 flex items-center gap-1 font-semibold"
-                  >
-                    Expand Map View <ArrowRight className="w-3.5 h-3.5" />
-                  </button>
+                  <span className="text-xs text-slate-400 font-mono">
+                    2,717 Stops • 33 Metro • 70 EMU
+                  </span>
                 </div>
-                <MapLibreView
+                <GoogleMapsView
                   stops={stops}
                   routesGeoJSON={routesGeoJSON}
                   metroStations={metroStations}
                   suburbanStations={suburbanStations}
-                  activeWeather={weather}
-                  onWeatherChange={setWeather}
                   onSelectRoute={(rt) => {
                     const matched = corridors.find((c) =>
                       c.primary_routes.includes(rt)
@@ -341,7 +444,7 @@ export default function App() {
               </div>
 
               {/* Action Directives & Audit Trail (5 cols on desktop) */}
-              <div className="xl:col-span-5 space-y-4">
+              <div className="xl:col-span-5 flex flex-col space-y-4">
                 <OperationalActions
                   actions={actions}
                   onDeployAction={handleDeployAction}
@@ -349,18 +452,18 @@ export default function App() {
                 />
 
                 {/* Live Operations Audit Log */}
-                <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 shadow-xl">
+                <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 shadow-xl flex-1 flex flex-col justify-between">
                   <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5 mb-2.5">
                     <Zap className="w-3.5 h-3.5 text-amber-400" />
                     CUMTA Dispatch Advisory Log
                   </h3>
-                  <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
+                  <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
                     {auditLog.map((log) => (
                       <div
                         key={log.id}
                         className="text-xs bg-slate-950/70 p-2 rounded-lg border border-slate-800/80 flex items-start gap-2"
                       >
-                        <span className="font-mono text-[10px] bg-slate-800 px-1.5 py-0.5 rounded text-emerald-400">
+                        <span className="font-mono text-[10px] bg-slate-800 px-1.5 py-0.5 rounded text-emerald-400 shrink-0">
                           {log.time}
                         </span>
                         <p className="text-slate-300 leading-snug flex-1">
@@ -381,45 +484,12 @@ export default function App() {
               dayType={dayType}
             />
 
-            {/* Corridor Snapshot */}
+            {/* Corridor Snapshot with Driver Incident Alerts */}
             <CorridorAnalytics
               corridors={corridors}
+              driverIncidents={driverIncidents}
               onOpenSimulator={openSimulatorForCorridor}
-            />
-          </div>
-        )}
-
-        {/* Tab 2: Geospatial Map View */}
-        {activeTab === "map" && (
-          <div className="space-y-4 animate-in fade-in duration-200">
-            <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 shadow-xl flex flex-wrap items-center justify-between gap-4">
-              <div>
-                <h2 className="text-base font-bold text-white flex items-center gap-2">
-                  <Layers className="w-5 h-5 text-emerald-400" />
-                  Full-Screen Chennai Metropolitan Geospatial Transport Network
-                </h2>
-                <p className="text-xs text-slate-400 mt-1">
-                  2,717 Geocoded Stops (GCC, Tambaram, Avadi) • 1,348 MTC Bus Routes • 33 Metro Stations • 70 Suburban Stations
-                </p>
-              </div>
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => openSimulatorForCorridor("corridor_omr")}
-                  className="bg-emerald-600 hover:bg-emerald-500 text-slate-950 font-bold text-xs px-3.5 py-2 rounded-xl transition flex items-center gap-1.5 shadow-md shadow-emerald-950/50"
-                >
-                  <Zap className="w-3.5 h-3.5 fill-current" />
-                  Test Corridor Intervention
-                </button>
-              </div>
-            </div>
-
-            <MapLibreView
-              stops={stops}
-              routesGeoJSON={routesGeoJSON}
-              metroStations={metroStations}
-              suburbanStations={suburbanStations}
-              activeWeather={weather}
-              onWeatherChange={setWeather}
+              onNavigateToComms={() => setActiveTab("communication")}
             />
           </div>
         )}
@@ -431,10 +501,15 @@ export default function App() {
           </div>
         )}
 
-        {/* Tab: Transport Communication Portal */}
+        {/* Tab: Transport Communication & Shuttle Dispatch Portal */}
         {activeTab === "communication" && (
           <div className="space-y-4 animate-in fade-in duration-200">
-            <CommunicationPortal />
+            <CommunicationPortal
+              incidents={driverIncidents}
+              onAddIncident={handleAddIncident}
+              onApproveShuttle={handleApproveShuttle}
+              onRejectShuttle={handleRejectShuttle}
+            />
           </div>
         )}
 
@@ -471,7 +546,9 @@ export default function App() {
           <div className="space-y-4 animate-in fade-in duration-200">
             <CorridorAnalytics
               corridors={corridors}
+              driverIncidents={driverIncidents}
               onOpenSimulator={openSimulatorForCorridor}
+              onNavigateToComms={() => setActiveTab("communication")}
             />
           </div>
         )}
