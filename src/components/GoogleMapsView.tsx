@@ -14,14 +14,17 @@ import {
   Maximize2
 } from "lucide-react";
 import type { BusStop, MetroStation, SuburbanStation } from "../types/api";
+import type { DriverIncidentReport } from "../types/communication";
 
 interface GoogleMapsViewProps {
   stops: BusStop[];
   routesGeoJSON: any;
   metroStations: MetroStation[];
   suburbanStations: SuburbanStation[];
+  incidents?: DriverIncidentReport[];
   selectedCorridorId?: string;
   onSelectRoute?: (routeNum: string) => void;
+  onSelectIncident?: (inc: DriverIncidentReport) => void;
 }
 
 // Dark style for Google Maps
@@ -81,8 +84,10 @@ export const GoogleMapsView: React.FC<GoogleMapsViewProps> = ({
   routesGeoJSON,
   metroStations,
   suburbanStations,
+  incidents = [],
   selectedCorridorId,
   onSelectRoute,
+  onSelectIncident,
 }) => {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const googleMapInstanceRef = useRef<google.maps.Map | null>(null);
@@ -94,6 +99,7 @@ export const GoogleMapsView: React.FC<GoogleMapsViewProps> = ({
     stops: true,
     metro: true,
     suburban: true,
+    incidents: true,
   });
 
   const [selectedEntity, setSelectedEntity] = useState<any>(null);
@@ -219,7 +225,7 @@ export const GoogleMapsView: React.FC<GoogleMapsViewProps> = ({
         });
 
         marker.addListener("click", () => {
-          setSelectedEntity({ type: "suburban", name: s.name, type: s.type });
+          setSelectedEntity({ type: "suburban", name: s.name, suburbanType: s.type });
         });
 
         googleMarkersRef.current.push(marker);
@@ -247,6 +253,51 @@ export const GoogleMapsView: React.FC<GoogleMapsViewProps> = ({
 
         googleMarkersRef.current.push(marker);
       });
+
+      // Render Active Incident Alert Markers
+      incidents.forEach((inc) => {
+        let lat = 13.0035;
+        let lng = 80.2014;
+        const locLower = (inc.location || "").toLowerCase();
+        const corr = inc.corridorId;
+
+        if (locLower.includes("alandur") || corr === "corridor_gst") {
+          lat = 13.0035; lng = 80.2014;
+        }
+        if (locLower.includes("velachery")) {
+          lat = 12.9782; lng = 80.2185;
+        } else if (locLower.includes("tidel") || corr === "corridor_omr") {
+          lat = 12.9897; lng = 80.2483;
+        } else if (locLower.includes("vadapalani") || corr === "corridor_irr") {
+          lat = 13.0514; lng = 80.2121;
+        } else if (locLower.includes("central") || corr === "corridor_anna_salai") {
+          lat = 13.0827; lng = 80.2707;
+        }
+
+        const isCritical = inc.severity === "CRITICAL" || inc.severity === "HIGH";
+        const marker = new google.maps.Marker({
+          position: { lat, lng },
+          map,
+          title: `Incident: Route ${inc.routeNum} - ${inc.category}`,
+          zIndex: 9999,
+          icon: {
+            path: google.maps.SymbolPath.FORWARD_CLOSED_ARROW,
+            scale: 6,
+            fillColor: isCritical ? "#ef4444" : "#f59e0b",
+            fillOpacity: 1,
+            strokeColor: "#ffffff",
+            strokeWeight: 2,
+            rotation: 180,
+          },
+        });
+
+        marker.addListener("click", () => {
+          setSelectedEntity({ type: "incident", incident: inc });
+          onSelectIncident?.(inc);
+        });
+
+        googleMarkersRef.current.push(marker);
+      });
     } catch (err: any) {
       console.warn("Google Maps load notice:", err);
       setGoogleMapsError(err?.message || "Google Maps key connecting...");
@@ -261,7 +312,7 @@ export const GoogleMapsView: React.FC<GoogleMapsViewProps> = ({
       googleMarkersRef.current.forEach((m) => m.setMap(null));
       googleMapInstanceRef.current = null;
     };
-  }, [routesGeoJSON, metroStations, suburbanStations, stops]);
+  }, [routesGeoJSON, metroStations, suburbanStations, stops, incidents]);
 
   // Handle Layer Visibility Toggles on Google Maps
   useEffect(() => {
@@ -269,7 +320,8 @@ export const GoogleMapsView: React.FC<GoogleMapsViewProps> = ({
     googlePolylinesRef.current.forEach((p) => p.setVisible(layersVisible.routes));
     googleMarkersRef.current.forEach((m) => {
       const title = m.getTitle() || "";
-      if (title.startsWith("Metro")) m.setVisible(layersVisible.metro);
+      if (title.startsWith("Incident")) m.setVisible(layersVisible.incidents);
+      else if (title.startsWith("Metro")) m.setVisible(layersVisible.metro);
       else if (title.startsWith("Suburban")) m.setVisible(layersVisible.suburban);
       else m.setVisible(layersVisible.stops);
     });
@@ -414,6 +466,18 @@ export const GoogleMapsView: React.FC<GoogleMapsViewProps> = ({
             )}
             <span className="text-slate-300">Bus Stops</span>
           </button>
+
+          <button
+            onClick={() => toggleLayer("incidents")}
+            className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-slate-950/80 border border-slate-800 hover:border-slate-700 transition"
+          >
+            {layersVisible.incidents ? (
+              <CheckSquare className="w-3.5 h-3.5 text-rose-400" />
+            ) : (
+              <Square className="w-3.5 h-3.5 text-slate-500" />
+            )}
+            <span className="text-slate-300">Incidents ({incidents.length})</span>
+          </button>
         </div>
       </div>
 
@@ -433,6 +497,38 @@ export const GoogleMapsView: React.FC<GoogleMapsViewProps> = ({
             </button>
           </div>
           <div className="space-y-1">
+            {selectedEntity.type === "incident" && (
+              <>
+                <div className="flex items-center justify-between">
+                  <span className="text-rose-400 font-bold font-mono text-sm">
+                    Route {selectedEntity.incident.routeNum}
+                  </span>
+                  <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-rose-500/20 text-rose-300 border border-rose-500/40">
+                    {selectedEntity.incident.severity}
+                  </span>
+                </div>
+                <div className="text-white font-semibold text-xs mt-1">
+                  {selectedEntity.incident.location}
+                </div>
+                <div className="text-slate-300 text-[11px] mt-0.5 leading-snug">
+                  {selectedEntity.incident.description}
+                </div>
+                {selectedEntity.incident.cvAnalysis && (
+                  <div className="mt-1.5 bg-slate-950 p-1.5 rounded border border-slate-800 text-[10px] text-cyan-300 flex items-center justify-between">
+                    <span>CV: {selectedEntity.incident.cvAnalysis.categoryLabel}</span>
+                    <span className="font-mono text-amber-400 font-bold">{selectedEntity.incident.cvAnalysis.potentialDelayImpact}</span>
+                  </div>
+                )}
+                <div className="mt-1 pt-1 border-t border-slate-800/80 flex items-center justify-between text-[10px]">
+                  <span className="font-mono text-slate-400">
+                    Status: {selectedEntity.incident.verificationStatus}
+                  </span>
+                  {selectedEntity.incident.dispatchStatus === "SHUTTLE_RECOMMENDED" && (
+                    <span className="text-amber-400 font-semibold">Shuttle Rec.</span>
+                  )}
+                </div>
+              </>
+            )}
             {selectedEntity.type === "route" && (
               <>
                 <div className="text-emerald-400 font-bold font-mono text-sm">

@@ -18,8 +18,12 @@ import { UnifiedTicketing } from "./components/ticketing/UnifiedTicketing";
 import { AIPredictionModule } from "./components/analytics/AIPredictionModule";
 import { TransitChatbot } from "./components/chatbot/TransitChatbot";
 import { AuthPage } from "./components/auth/AuthPage";
+import { IncidentCorridorIntelligence } from "./components/dashboard/IncidentCorridorIntelligence";
+import { FleetDispatchOperations } from "./components/dashboard/FleetDispatchOperations";
+import { CorridorDelayMonitor } from "./components/dashboard/CorridorDelayMonitor";
+import { IncidentTimeline } from "./components/dashboard/IncidentTimeline";
 import { INITIAL_DRIVER_INCIDENTS } from "./data/initial_incidents";
-import type { DriverIncidentReport } from "./types/communication";
+import type { DriverIncidentReport, VerificationStatus } from "./types/communication";
 
 
 import {
@@ -215,6 +219,107 @@ export default function App() {
       ...prev,
     ]);
   };
+
+  const handleVerifyIncident = (
+    incidentId: string,
+    status: VerificationStatus,
+    officerName: string,
+    officerBadge: string,
+    notes?: string
+  ) => {
+    const now = new Date();
+    const timeStr = now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+
+    setDriverIncidents((prev) =>
+      prev.map((inc) => {
+        if (inc.id !== incidentId) return inc;
+        return {
+          ...inc,
+          verificationStatus: status,
+          officialReview: {
+            officerName,
+            officerBadge,
+            decision: status === "CONFIRMED" ? "CONFIRMED" : "DISMISSED",
+            reviewTimestamp: timeStr,
+            notes,
+          },
+          auditTrail: [
+            ...inc.auditTrail,
+            {
+              id: `AUD-VER-${Date.now().toString().slice(-4)}`,
+              timestamp: timeStr,
+              action: `Official Review: ${status}`,
+              actor: `${officerName} (${officerBadge})`,
+              details: notes || `Verification status updated to ${status}`,
+            },
+          ],
+        };
+      })
+    );
+
+    setAuditLog((prev) => [
+      {
+        id: `LOG-VER-${Date.now().toString().slice(-4)}`,
+        time: timeStr,
+        text: `Official Incident Review: Incident ${incidentId} marked as ${status} by ${officerName} (${officerBadge}).`,
+      },
+      ...prev,
+    ]);
+  };
+
+  const handleResolveIncident = (incidentId: string, officerName: string) => {
+    const now = new Date();
+    const timeStr = now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+
+    setDriverIncidents((prev) =>
+      prev.map((inc) => {
+        if (inc.id !== incidentId) return inc;
+        return {
+          ...inc,
+          verificationStatus: "RESOLVED",
+          dispatchStatus: "RESOLVED_NO_SHUTTLE",
+          auditTrail: [
+            ...inc.auditTrail,
+            {
+              id: `AUD-RES-${Date.now().toString().slice(-4)}`,
+              timestamp: timeStr,
+              action: "Incident Marked as Resolved",
+              actor: officerName || "Control Room",
+              details: "Disruption cleared and normal headway restored.",
+            },
+          ],
+        };
+      })
+    );
+  };
+
+  const handleRequestClarification = (incidentId: string, query: string, officerName: string) => {
+    const now = new Date();
+    const timeStr = now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+
+    setDriverIncidents((prev) =>
+      prev.map((inc) => {
+        if (inc.id !== incidentId) return inc;
+        return {
+          ...inc,
+          verificationStatus: "MORE_INFO_REQUESTED",
+          clarificationRequest: query,
+          auditTrail: [
+            ...inc.auditTrail,
+            {
+              id: `AUD-CLR-${Date.now().toString().slice(-4)}`,
+              timestamp: timeStr,
+              action: "Official Clarification Requested",
+              actor: officerName,
+              details: query,
+            },
+          ],
+        };
+      })
+    );
+  };
+
+  const [overviewEvidenceIncident, setOverviewEvidenceIncident] = useState<DriverIncidentReport | null>(null);
 
   // Load Data & Weather on Mount
   useEffect(() => {
@@ -475,14 +580,14 @@ export default function App() {
               weather={weather}
             />
 
-            {/* Top Split: Interactive Map + Action Directives */}
+            {/* Main Dashboard: 3-Column Layout on Wide Screens */}
             <div className="grid grid-cols-1 xl:grid-cols-12 gap-5 items-stretch">
-              {/* Map Canvas (7 cols on desktop) */}
-              <div className="xl:col-span-7 flex flex-col space-y-2">
+              {/* Column 1: Chennai Network Visualizer (Google Maps Platform) (5 cols) */}
+              <div className="xl:col-span-5 flex flex-col space-y-2">
                 <div className="flex items-center justify-between">
                   <h2 className="text-sm font-bold text-white flex items-center gap-2">
                     <Layers className="w-4 h-4 text-emerald-400" />
-                    Chennai Multimodal Network Visualizer (Google Maps Platform)
+                    Chennai Multimodal Network (Google Maps)
                   </h2>
                   <span className="text-xs text-slate-400 font-mono">
                     2,717 Stops • 33 Metro • 70 EMU
@@ -493,6 +598,25 @@ export default function App() {
                   routesGeoJSON={routesGeoJSON}
                   metroStations={metroStations}
                   suburbanStations={suburbanStations}
+                  incidents={driverIncidents}
+                  onSelectRoute={(rt) => {
+                    const matched = corridors.find((c) =>
+                      c.primary_routes.includes(rt)
+                    );
+                    if (matched) setSimulatorCorridorId(matched.id);
+                  }}
+                  onSelectIncident={(inc) => {
+                    setOverviewEvidenceIncident(inc);
+                  }}
+                />
+              </div>
+
+              {/* Column 2: Live Incident & Corridor Intelligence (4 cols) */}
+              <div className="xl:col-span-4 flex flex-col">
+                <IncidentCorridorIntelligence
+                  incidents={driverIncidents}
+                  onViewIncidentEvidence={(inc) => setOverviewEvidenceIncident(inc)}
+                  onNavigateToPortal={() => setActiveTab("communication")}
                   onSelectRoute={(rt) => {
                     const matched = corridors.find((c) =>
                       c.primary_routes.includes(rt)
@@ -502,7 +626,62 @@ export default function App() {
                 />
               </div>
 
-              {/* Action Directives & Audit Trail (5 cols on desktop) */}
+              {/* Column 3: Fleet & Dispatch Operations (3 cols) */}
+              <div className="xl:col-span-3 flex flex-col">
+                <FleetDispatchOperations
+                  incidents={driverIncidents}
+                  onApproveShuttle={(id) => {
+                    handleApproveShuttle(
+                      id,
+                      operatorDetails?.name || "R. Sundaram (Traffic Ops Chief)",
+                      operatorDetails?.badgeId || "CUMTA-CTRL-01",
+                      "Authorized via Overview quick dispatch action"
+                    );
+                  }}
+                  onRejectShuttle={(id) => {
+                    handleRejectShuttle(
+                      id,
+                      operatorDetails?.name || "R. Sundaram (Traffic Ops Chief)",
+                      operatorDetails?.badgeId || "CUMTA-CTRL-01",
+                      "Alternative parallel transit headway sufficient"
+                    );
+                  }}
+                  onNavigateToPortal={() => setActiveTab("communication")}
+                />
+              </div>
+            </div>
+
+            {/* Bottom Section 1: Corridor Delay Monitor */}
+            <CorridorDelayMonitor
+              incidents={driverIncidents}
+              onSelectCorridor={(id) => openSimulatorForCorridor(id)}
+            />
+
+            {/* Bottom Section 2: Operational Incident Lifecycle & Decision Pipeline */}
+            <IncidentTimeline
+              incidents={driverIncidents}
+              onNavigateToPortal={() => setActiveTab("communication")}
+            />
+
+            {/* Bottom Section 3: Demand & Fleet Capacity Distribution */}
+            <DemandCharts
+              hourly={hourlyDemand}
+              currentHour={currentHour}
+              systemStats={systemStats || undefined}
+              dayType={dayType}
+            />
+
+            {/* Bottom Section 4: Corridor Analytics & Operational Directives Split */}
+            <div className="grid grid-cols-1 xl:grid-cols-12 gap-5 items-stretch">
+              <div className="xl:col-span-7">
+                <CorridorAnalytics
+                  corridors={corridors}
+                  driverIncidents={driverIncidents}
+                  onOpenSimulator={openSimulatorForCorridor}
+                  onNavigateToComms={() => setActiveTab("communication")}
+                />
+              </div>
+
               <div className="xl:col-span-5 flex flex-col space-y-4">
                 <OperationalActions
                   actions={actions}
@@ -514,7 +693,7 @@ export default function App() {
                 <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 shadow-xl flex-1 flex flex-col justify-between">
                   <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5 mb-2.5">
                     <Zap className="w-3.5 h-3.5 text-amber-400" />
-                    CUMTA Dispatch Advisory Log
+                    CUMTA Operational Dispatch & Audit Log
                   </h3>
                   <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
                     {auditLog.map((log) => (
@@ -534,22 +713,6 @@ export default function App() {
                 </div>
               </div>
             </div>
-
-            {/* Bottom: Charts & Analytical Distributions */}
-            <DemandCharts
-              hourly={hourlyDemand}
-              currentHour={currentHour}
-              systemStats={systemStats || undefined}
-              dayType={dayType}
-            />
-
-            {/* Corridor Snapshot with Driver Incident Alerts */}
-            <CorridorAnalytics
-              corridors={corridors}
-              driverIncidents={driverIncidents}
-              onOpenSimulator={openSimulatorForCorridor}
-              onNavigateToComms={() => setActiveTab("communication")}
-            />
           </div>
         )}
 
@@ -568,6 +731,9 @@ export default function App() {
               onAddIncident={handleAddIncident}
               onApproveShuttle={handleApproveShuttle}
               onRejectShuttle={handleRejectShuttle}
+              onVerifyIncident={handleVerifyIncident}
+              onResolveIncident={handleResolveIncident}
+              onRequestClarification={handleRequestClarification}
             />
           </div>
         )}
@@ -692,6 +858,67 @@ export default function App() {
           onClose={() => setSimulatorOpen(false)}
           onCommitDirective={handleCommitDirective}
         />
+      )}
+
+      {/* Overview Evidence Viewer Modal */}
+      {overviewEvidenceIncident && (
+        <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-slate-900 border border-slate-700 rounded-2xl max-w-2xl w-full p-5 space-y-4 shadow-2xl animate-in zoom-in-95">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+              <span className="font-bold text-white text-sm">
+                Incident Evidence Inspection: {overviewEvidenceIncident.id} (Route {overviewEvidenceIncident.routeNum})
+              </span>
+              <button
+                onClick={() => setOverviewEvidenceIncident(null)}
+                className="text-slate-400 hover:text-white font-bold"
+              >
+                ✕
+              </button>
+            </div>
+
+            {overviewEvidenceIncident.evidenceUrl && (
+              <div className="rounded-xl overflow-hidden border border-slate-800 bg-black flex items-center justify-center max-h-96">
+                <img
+                  src={overviewEvidenceIncident.evidenceUrl}
+                  alt="Incident visual evidence"
+                  className="max-h-96 w-auto object-contain"
+                />
+              </div>
+            )}
+
+            <div className="bg-slate-950 p-3 rounded-xl border border-slate-800 text-xs space-y-1">
+              <div className="flex items-center justify-between">
+                <span className="text-white font-semibold">📍 {overviewEvidenceIncident.location}</span>
+                <span className="text-amber-400 font-mono font-bold">{overviewEvidenceIncident.severity}</span>
+              </div>
+              <p className="text-slate-300">{overviewEvidenceIncident.description}</p>
+              {overviewEvidenceIncident.cvAnalysis && (
+                <div className="pt-2 text-cyan-300 text-[11px] flex items-center justify-between">
+                  <span>CV: {overviewEvidenceIncident.cvAnalysis.categoryLabel} ({overviewEvidenceIncident.cvAnalysis.confidence}%)</span>
+                  <span className="font-mono text-amber-400">{overviewEvidenceIncident.cvAnalysis.potentialDelayImpact}</span>
+                </div>
+              )}
+            </div>
+
+            <div className="flex items-center justify-between pt-1">
+              <button
+                onClick={() => {
+                  setOverviewEvidenceIncident(null);
+                  setActiveTab("communication");
+                }}
+                className="text-xs text-cyan-400 hover:text-cyan-300 font-semibold"
+              >
+                Open Full Review in Communications Portal →
+              </button>
+              <button
+                onClick={() => setOverviewEvidenceIncident(null)}
+                className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-xs font-semibold"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Floating TransitPulse AI Assistant */}

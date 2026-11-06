@@ -28,6 +28,17 @@ export interface TransportMessage {
 
 // ─── Driver Incident Reporting & Shuttle Dispatch Types ──────────────────────
 
+export type CVDetectionCategory =
+  | "ROAD_OBSTRUCTION"
+  | "TRAFFIC_CONGESTION"
+  | "ROAD_CONSTRUCTION"
+  | "LANE_BLOCKAGE"
+  | "ACCIDENT"
+  | "WATERLOGGING"
+  | "DAMAGED_ROAD"
+  | "VEHICLE_BREAKDOWN"
+  | "OTHER";
+
 export type DriverIssueCategory =
   | "VEHICLE_BREAKDOWN"
   | "HEAVY_TRAFFIC"
@@ -35,9 +46,18 @@ export type DriverIssueCategory =
   | "ACCIDENT_OBSTRUCTION"
   | "PASSENGER_CROWDING"
   | "BUS_DELAYED"
+  | "WATERLOGGING"
+  | "ROAD_CONSTRUCTION"
   | "OTHER_OPERATIONAL";
 
 export type IncidentSeverity = "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
+
+export type VerificationStatus =
+  | "UNVERIFIED"
+  | "CONFIRMED"
+  | "REJECTED_INCORRECT"
+  | "MORE_INFO_REQUESTED"
+  | "RESOLVED";
 
 export type ShuttleDispatchStatus =
   | "PENDING_REVIEW"
@@ -45,6 +65,27 @@ export type ShuttleDispatchStatus =
   | "SHUTTLE_APPROVED"
   | "SHUTTLE_REJECTED"
   | "RESOLVED_NO_SHUTTLE";
+
+export interface CVAnalysisResult {
+  category: CVDetectionCategory;
+  categoryLabel: string;
+  description: string;
+  confidence: number; // e.g. 94%
+  estimatedSeverity: IncidentSeverity;
+  potentialDelayImpact: string; // e.g. "+18 - 25 min"
+  suggestedAction: string;
+  isAiObservation: boolean;
+  detectedObjects?: string[];
+  affectedCorridor?: string;
+  analysisTimestamp?: string;
+}
+
+export interface StandbyFleetInfo {
+  depot: string;
+  busesAvailable: number;
+  estimatedEtaMin: number;
+  corridor: string;
+}
 
 export interface DriverIncidentReport {
   id: string;
@@ -59,6 +100,26 @@ export interface DriverIncidentReport {
   driverName: string;
   driverId: string;
   timestamp: string;
+
+  // AI Computer Vision Evidence & Detection
+  evidenceUrl?: string;
+  evidenceType?: "photo" | "video";
+  evidenceTimestamp?: string;
+  cvAnalysis?: CVAnalysisResult;
+
+  // Verification Lifecycle
+  verificationStatus: VerificationStatus;
+  verificationReason?: string;
+  clarificationRequest?: string;
+  clarificationResponse?: string;
+
+  // Duplicate Correlation & Clustering
+  duplicateGroupId?: string;
+  duplicateCount?: number;
+
+  // Operational Context
+  affectedPassengersEst?: number;
+  standbyFleet?: StandbyFleetInfo;
   
   // Shuttle Evaluation (AI / Rules Engine recommendation)
   shuttleRecommendation?: {
@@ -67,6 +128,7 @@ export interface DriverIncidentReport {
     suggestedDepot: string;
     numShuttles: number;
     alternativeCovered: string;
+    alternativeRoutes?: string[];
   };
 
   // Official Human Decision
@@ -74,7 +136,7 @@ export interface DriverIncidentReport {
   officialReview?: {
     officerName: string;
     officerBadge: string;
-    decision: "APPROVED" | "REJECTED";
+    decision: "APPROVED" | "REJECTED" | "CONFIRMED" | "DISMISSED";
     rejectionReason?: string;
     reviewTimestamp: string;
     notes?: string;
