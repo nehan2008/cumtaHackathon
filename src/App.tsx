@@ -559,11 +559,11 @@ export default function App() {
       />
 
       {/* Main Content Area */}
-      <main className="flex-1 max-w-[1680px] w-full mx-auto px-3 sm:px-6 py-4 space-y-5">
+      <main className="flex-1 max-w-[1680px] w-full mx-auto px-3 sm:px-6 py-4 pb-28 space-y-6">
         {/* Tab 1: Overview (Control Room Main View) - Global KPIs and Gauges restricted to Overview only */}
         {activeTab === "overview" && (
-          <div className="space-y-5 animate-in fade-in duration-200">
-            {/* KPI Cards Banner */}
+          <div className="space-y-6 animate-in fade-in duration-200">
+            {/* Row 1: Network KPIs Banner */}
             <KPICards
               currentDemand={currentDemand}
               corridors={corridors}
@@ -572,7 +572,7 @@ export default function App() {
               weather={weather}
             />
 
-            {/* Gauge KPIs */}
+            {/* Row 2: Operational Health Gauges */}
             <GaugeKPIs
               currentDemand={currentDemand}
               corridors={corridors}
@@ -580,10 +580,10 @@ export default function App() {
               weather={weather}
             />
 
-            {/* Main Dashboard: 3-Column Layout on Wide Screens */}
-            <div className="grid grid-cols-1 xl:grid-cols-12 gap-5 items-stretch">
-              {/* Column 1: Chennai Network Visualizer (Google Maps Platform) (5 cols) */}
-              <div className="xl:col-span-5 flex flex-col space-y-2">
+            {/* Row 3: Main Operations Dashboard (3-Column Layout on Wide Screens) */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-stretch">
+              {/* Column 1: Chennai Multimodal Network (Google Maps Platform) (5 cols on wide screens) */}
+              <div className="lg:col-span-12 xl:col-span-5 flex flex-col space-y-2">
                 <div className="flex items-center justify-between">
                   <h2 className="text-sm font-bold text-white flex items-center gap-2">
                     <Layers className="w-4 h-4 text-emerald-400" />
@@ -611,8 +611,8 @@ export default function App() {
                 />
               </div>
 
-              {/* Column 2: Live Incident & Corridor Intelligence (4 cols) */}
-              <div className="xl:col-span-4 flex flex-col">
+              {/* Column 2: Live Incident & Corridor Intelligence (4 cols on wide screens) */}
+              <div className="lg:col-span-6 xl:col-span-4 flex flex-col">
                 <IncidentCorridorIntelligence
                   incidents={driverIncidents}
                   onViewIncidentEvidence={(inc) => setOverviewEvidenceIncident(inc)}
@@ -626,8 +626,8 @@ export default function App() {
                 />
               </div>
 
-              {/* Column 3: Fleet & Dispatch Operations (3 cols) */}
-              <div className="xl:col-span-3 flex flex-col">
+              {/* Column 3: Fleet & Dispatch Operations (3 cols on wide screens) */}
+              <div className="lg:col-span-6 xl:col-span-3 flex flex-col">
                 <FleetDispatchOperations
                   incidents={driverIncidents}
                   onApproveShuttle={(id) => {

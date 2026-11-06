@@ -3,43 +3,46 @@ import type { HourlyDemand, Corridor } from "../types/api";
 import type { ChennaiWeather } from "../services/weather";
 
 // ─── Odometer/Semicircular Gauge ─────────────────────────────────────────────
-// Spans 0–100 on a 180° arc (left → right).
+// Spans 0 to maxScale on a 180° arc (left → right).
 // 0% points at 9 o'clock (left, -90° rotation)
-// 50% points at 12 o'clock (straight up, 0° rotation)
-// 100% points at 3 o'clock (right, +90° rotation)
-// Needle pivot is at (CX, CY).
+// Midpoint points at 12 o'clock (straight up, 0° rotation)
+// maxScale points at 3 o'clock (right, +90° rotation)
+// Needle pivot is mathematically pinned at (CX, CY) via translate(CX, CY) rotate(angle).
 
 interface GaugeProps {
-  value: number;       // Raw value (can exceed 100 for capacity overloads)
-  clampedValue?: number; // Clamped 0-100 for needle positioning
+  value: number;        // Raw value (e.g. 139 for Network Pressure, 0 for Weather Surge)
+  maxScale?: number;    // Maximum scale (default 100, or 150 for Network Pressure)
   label: string;
   unit?: string;
-  low?: number;        // green → amber
-  high?: number;       // amber → orange
-  critical?: number;   // orange → red
+  low?: number;         // green → amber
+  high?: number;        // amber → orange
+  critical?: number;    // orange → red
+  capacityThreshold?: number; // Optional marker (e.g. 100% capacity line)
   dataSource: string;
   dataNote?: string;
   statusBadge?: string;
 }
 
 const CX = 100;
-const CY = 95;
+const CY = 96;
 const ARC_RADIUS = 68;
 
-function polarToXY(deg: number, r: number) {
-  // 0° = left (-180° in polar), 180° = right (0° in polar)
-  const rad = ((deg - 180) * Math.PI) / 180;
+// Convert percentage/value along the arc to Cartesian coordinates
+// Angle ranges from 180° (left, 0%) to 0° (right, maxScale)
+function valueToCoord(val: number, max: number, r: number) {
+  const fraction = Math.max(0, Math.min(1, val / max));
+  const angleRad = Math.PI * (1 - fraction); // PI (left) to 0 (right)
   return {
-    x: CX + r * Math.cos(rad),
-    y: CY + r * Math.sin(rad),
+    x: CX + r * Math.cos(angleRad),
+    y: CY - r * Math.sin(angleRad),
   };
 }
 
-function describeArc(startDeg: number, endDeg: number, r: number) {
-  const start = polarToXY(endDeg, r);
-  const end = polarToXY(startDeg, r);
-  const largeArc = endDeg - startDeg > 180 ? 1 : 0;
-  return `M ${start.x} ${start.y} A ${r} ${r} 0 ${largeArc} 0 ${end.x} ${end.y}`;
+// Generate an SVG circular arc from valStart to valEnd
+function describeValueArc(valStart: number, valEnd: number, max: number, r: number) {
+  const p1 = valueToCoord(valStart, max, r);
+  const p2 = valueToCoord(valEnd, max, r);
+  return `M ${p1.x.toFixed(2)} ${p1.y.toFixed(2)} A ${r} ${r} 0 0 1 ${p2.x.toFixed(2)} ${p2.y.toFixed(2)}`;
 }
 
 function getGaugeColor(value: number, low: number, high: number, critical: number) {
@@ -58,85 +61,105 @@ function getGaugeStatus(value: number, low: number, high: number, critical: numb
 
 export const OdometerGauge: React.FC<GaugeProps> = ({
   value,
-  clampedValue,
+  maxScale = 100,
   label,
   unit = "%",
   low = 40,
   high = 70,
   critical = 90,
+  capacityThreshold,
   dataSource,
   dataNote,
   statusBadge,
 }) => {
-  const numericClamped = Math.max(0, Math.min(100, clampedValue !== undefined ? clampedValue : value));
-  // Needle rotation angle: -90° (0%) to +90° (100%)
-  const needleRotation = -90 + (numericClamped / 100) * 180;
+  // Needle rotation calculation:
+  // 0% -> -90° (points strictly horizontal left towards 0 tick)
+  // maxScale -> +90° (points strictly horizontal right towards max tick)
+  const clampedVal = Math.max(0, Math.min(maxScale, value));
+  const needleAngle = -90 + (clampedVal / maxScale) * 180;
+
   const color = getGaugeColor(value, low, high, critical);
   const statusLabel = statusBadge || getGaugeStatus(value, low, high, critical);
 
-  // Zone colored arc segments:
-  // Green (0 -> low), Amber (low -> high), Orange (high -> critical), Red (critical -> 100)
+  // Colored segments along the arc
   const zones = [
-    { from: 0,        to: low,      color: "#10b981" },
-    { from: low,      to: high,     color: "#f59e0b" },
-    { from: high,     to: critical, color: "#f97316" },
-    { from: critical, to: 100,      color: "#ef4444" },
-  ];
+    { from: 0,        to: Math.min(low, maxScale),      color: "#10b981" },
+    { from: low,      to: Math.min(high, maxScale),     color: "#f59e0b" },
+    { from: high,     to: Math.min(critical, maxScale), color: "#f97316" },
+    { from: critical, to: maxScale,                     color: "#ef4444" },
+  ].filter((z) => z.from < z.to);
 
-  const ticks = [0, 25, 50, 75, 100];
+  // Tick marks
+  const ticks = maxScale === 150 ? [0, 50, 100, 150] : [0, 25, 50, 75, 100];
 
   return (
-    <div className="bg-slate-900/95 border border-slate-800 rounded-2xl p-3.5 shadow-xl flex flex-col items-center justify-between transition hover:border-slate-700">
+    <div className="bg-slate-900/95 border border-slate-800 rounded-2xl p-4 shadow-xl flex flex-col items-center justify-between transition hover:border-slate-700 min-h-[260px]">
       {/* Title */}
       <div className="w-full text-center">
         <h4 className="text-xs font-bold text-slate-300 tracking-wide uppercase">{label}</h4>
       </div>
 
       {/* Semicircular Odometer Gauge SVG */}
-      <div className="relative w-[190px] h-[115px] my-1">
-        <svg viewBox="0 0 200 120" className="w-full h-full overflow-visible">
-          {/* Base Background Track */}
+      <div className="relative w-full max-w-[210px] h-[120px] my-1 flex items-center justify-center">
+        <svg viewBox="0 0 200 125" className="w-full h-full overflow-visible">
+          {/* Base Background Arc Track */}
           <path
-            d={describeArc(0, 180, ARC_RADIUS)}
+            d={describeValueArc(0, maxScale, maxScale, ARC_RADIUS)}
             fill="none"
             stroke="#1e293b"
-            strokeWidth="12"
+            strokeWidth="11"
             strokeLinecap="round"
           />
 
-          {/* Subdivided Zone Track Arcs */}
-          {zones.map((zone, i) => {
-            if (zone.from >= zone.to) return null;
-            return (
-              <path
-                key={i}
-                d={describeArc(zone.from * 1.8, zone.to * 1.8, ARC_RADIUS)}
-                fill="none"
-                stroke={zone.color}
-                strokeWidth="12"
-                strokeLinecap={i === 0 ? "round" : i === zones.length - 1 ? "round" : "butt"}
-                opacity="0.3"
-              />
-            );
-          })}
-
-          {/* Active Fill Track (Up to current clamped value) */}
-          {numericClamped > 0 && (
+          {/* Subdivided Colored Zone Tracks */}
+          {zones.map((zone, i) => (
             <path
-              d={describeArc(0, numericClamped * 1.8, ARC_RADIUS)}
+              key={i}
+              d={describeValueArc(zone.from, zone.to, maxScale, ARC_RADIUS)}
+              fill="none"
+              stroke={zone.color}
+              strokeWidth="11"
+              strokeLinecap={i === 0 ? "round" : i === zones.length - 1 ? "round" : "butt"}
+              opacity="0.35"
+            />
+          ))}
+
+          {/* Active Value Track (Fill up to current value) */}
+          {clampedVal > 0 && (
+            <path
+              d={describeValueArc(0, clampedVal, maxScale, ARC_RADIUS)}
               fill="none"
               stroke={color.stroke}
-              strokeWidth="10"
+              strokeWidth="9"
               strokeLinecap="round"
               opacity="0.95"
             />
           )}
 
-          {/* Scale Tick Marks and Numbers */}
+          {/* Optional Capacity Threshold Demarcation Line (e.g. 100% capacity on 150% scale) */}
+          {capacityThreshold && (
+            (() => {
+              const inner = valueToCoord(capacityThreshold, maxScale, ARC_RADIUS - 8);
+              const outer = valueToCoord(capacityThreshold, maxScale, ARC_RADIUS + 8);
+              return (
+                <line
+                  x1={inner.x}
+                  y1={inner.y}
+                  x2={outer.x}
+                  y2={outer.y}
+                  stroke="#ef4444"
+                  strokeWidth="2.5"
+                  strokeDasharray="2 1"
+                />
+              );
+            })()
+          )}
+
+          {/* Scale Tick Marks & Labels */}
           {ticks.map((t) => {
-            const outer = polarToXY(t * 1.8, ARC_RADIUS + 9);
-            const inner = polarToXY(t * 1.8, ARC_RADIUS + 3);
-            const labelPos = polarToXY(t * 1.8, ARC_RADIUS + 18);
+            const inner = valueToCoord(t, maxScale, ARC_RADIUS + 2);
+            const outer = valueToCoord(t, maxScale, ARC_RADIUS + 7);
+            const labelPos = valueToCoord(t, maxScale, ARC_RADIUS + 16);
             return (
               <g key={t}>
                 <line
@@ -152,9 +175,10 @@ export const OdometerGauge: React.FC<GaugeProps> = ({
                   y={labelPos.y}
                   textAnchor="middle"
                   dominantBaseline="middle"
-                  fontSize="8"
+                  fontSize="7.5"
                   fontWeight="600"
-                  fill="#94a3b8"
+                  fill={t === 100 && maxScale > 100 ? "#ef4444" : "#94a3b8"}
+                  fontFamily="monospace"
                 >
                   {t}
                 </text>
@@ -162,54 +186,49 @@ export const OdometerGauge: React.FC<GaugeProps> = ({
             );
           })}
 
-          {/* High-Contrast Visible Odometer Needle (Guaranteed on top) */}
-          <g
-            transform={`rotate(${needleRotation}, ${CX}, ${CY})`}
-            className="transition-transform duration-500 ease-out"
-            style={{ transformOrigin: `${CX}px ${CY}px` }}
+          {/* Center Digital Value Readout cleanly elevated above pivot */}
+          <text
+            x={CX}
+            y={CY - 22}
+            textAnchor="middle"
+            dominantBaseline="middle"
+            fontSize="17"
+            fontWeight="900"
+            fill="#ffffff"
+            fontFamily="monospace"
+            className="drop-shadow-md"
           >
-            {/* Needle Drop Shadow */}
+            {Math.round(value)}{unit}
+          </text>
+
+          {/* Mathematically Pinned Odometer Needle */}
+          {/* translate(CX, CY) moves (0,0) exactly to the gauge center. */}
+          {/* rotate(needleAngle) rotates around (0,0) without CSS transform-box ambiguities. */}
+          <g transform={`translate(${CX}, ${CY}) rotate(${needleAngle})`}>
+            {/* Needle Shadow */}
             <polygon
-              points={`${CX - 3.5},${CY + 8} ${CX},${CY - 58} ${CX + 3.5},${CY + 8}`}
+              points="-3.5,8 0,-57 3.5,8"
               fill="#000000"
-              opacity="0.5"
+              opacity="0.35"
             />
-            {/* Needle Core - Bright Solid White for Crisp Visibility */}
+            {/* Needle Body (Bright Solid White for high contrast) */}
             <polygon
-              points={`${CX - 2.5},${CY + 7} ${CX},${CY - 56} ${CX + 2.5},${CY + 7}`}
+              points="-2.5,7 0,-56 2.5,7"
               fill="#ffffff"
               stroke="#0f172a"
               strokeWidth="0.75"
             />
-            {/* Needle Pointer Accent Tip matching status color */}
+            {/* Needle Pointer Accent Tip */}
             <polygon
-              points={`${CX - 1.8},${CY - 36} ${CX},${CY - 56} ${CX + 1.8},${CY - 36}`}
+              points="-2,-36 0,-56 2,-36"
               fill={color.stroke}
             />
-            {/* Needle Counterweight Tail */}
-            <circle cx={CX} cy={CY + 7} r="3" fill="#475569" stroke="#0f172a" strokeWidth="0.5" />
-
-            {/* Central Needle Hub Cap */}
-            <circle cx={CX} cy={CY} r="8" fill="#1e293b" stroke="#64748b" strokeWidth="2" />
-            <circle cx={CX} cy={CY} r="4" fill={color.stroke} />
-            <circle cx={CX} cy={CY} r="1.5" fill="#ffffff" />
-          </g>
-
-          {/* Central Digital Readout Box placed cleanly above pivot */}
-          <g transform={`translate(${CX}, ${CY - 24})`}>
-            <text
-              x="0"
-              y="0"
-              textAnchor="middle"
-              dominantBaseline="middle"
-              fontSize="16"
-              fontWeight="900"
-              fill="#ffffff"
-              fontFamily="monospace"
-              className="drop-shadow"
-            >
-              {Math.round(value)}{unit}
-            </text>
+            {/* Counterweight Tail */}
+            <circle cx="0" cy="7" r="3" fill="#475569" stroke="#0f172a" strokeWidth="0.5" />
+            {/* Central Needle Hub */}
+            <circle cx="0" cy="0" r="7.5" fill="#1e293b" stroke="#64748b" strokeWidth="2" />
+            <circle cx="0" cy="0" r="4" fill={color.stroke} />
+            <circle cx="0" cy="0" r="1.5" fill="#ffffff" />
           </g>
         </svg>
       </div>
@@ -247,11 +266,11 @@ export const GaugeKPIs: React.FC<GaugeKPIsProps> = ({
 }) => {
   const weatherMult = weather?.demand_multiplier ?? 1.0;
 
-  // ── 1. Network Pressure ────────────────────────────────────────────────────
+  // ── 1. Network Pressure (Current: 139%) ────────────────────────────────────
   // Formula: (hourly boardings / scheduled city seat capacity) × 100
   // Source: 54M historical ETM ticket records aggregated into corridor_demand.json
-  // Valid range: 0–150+ (during morning peak, 333k tap-ins vs 240k capacity = ~139%)
-  // Clamped at 100 for gauge needle deflection; exact value shown on digital readout.
+  // Scale: 0–150% with 100% capacity line and red overload crush-zone.
+  // The needle dynamically rotates to 139% without silent clamping.
   const rawBoardings =
     dayType === "weekday"
       ? currentDemand?.weekday_boardings ?? 180000
@@ -259,29 +278,27 @@ export const GaugeKPIs: React.FC<GaugeKPIsProps> = ({
   const boardings = Math.round(rawBoardings * weatherMult);
   const capacity = currentDemand?.city_capacity ?? 240000;
   const networkPressure = Math.round((boardings / capacity) * 100);
-  const networkPressureClamped = Math.min(100, networkPressure);
 
-  // ── 2. Corridor Bottleneck Index ───────────────────────────────────────────
+  // ── 2. Corridor Bottleneck Index (Current: ~72%) ───────────────────────────
   // Formula: Weighted average risk score across Chennai's 5 key trunk corridors
   // Source: corridor_demand.json corridors array (OMR: 94, GST: 82, IRR: 74, Anna Salai: 58, PHR: 79)
-  // Valid range: 0–100
+  // Scale: 0–100%
   const criticalCount = corridors.filter(
     (c) => c.risk_level === "critical" || c.risk_level === "high"
   ).length;
   const avgRiskScore =
     corridors.length > 0
       ? corridors.reduce((sum, c) => sum + c.risk_score, 0) / corridors.length
-      : 77;
-  // Apply weather multiplier impact to road bottlenecks
+      : 72;
   const bottleneckIndex = Math.min(
     100,
     Math.round(avgRiskScore * (1 + (weatherMult - 1) * 0.4))
   );
 
-  // ── 3. MTC Fleet Utilization ───────────────────────────────────────────────
+  // ── 3. MTC Fleet Utilization (Current: ~92%) ──────────────────────────────
   // Formula: (active buses on road / total operable MTC fleet) × 100
   // Source: MTC depot turnout logs & scheduled pull-outs
-  // Valid range: 20–95% (Peak hours: 88-92%, mid-day: ~68%, night: ~30%)
+  // Scale: 0–100% (Peak: 92%, mid-day: ~68%, night: ~28%)
   const hour = currentDemand?.hour ?? 8;
   const isPeak = (hour >= 8 && hour <= 10) || (hour >= 17 && hour <= 19);
   const isMidDay = hour >= 11 && hour <= 15;
@@ -298,39 +315,41 @@ export const GaugeKPIs: React.FC<GaugeKPIsProps> = ({
     fleetUtilization = 76;
   }
 
-  // ── 4. Weather Surge Pressure ──────────────────────────────────────────────
+  // ── 4. Weather Surge Pressure (Current: 0% in clear weather) ───────────────
   // Formula: Normalized weather disruption load (0% = clear, 100% = severe flooding)
   // Source: Open-Meteo live API / weather.ts profiles
-  // Valid range: 0–100% (Clear = 0%, Heat = 47%, Rain = 87%)
+  // Scale: 0–100% (Clear = 0%, Heat = 47%, Rain = 87%)
+  // Points strictly to 0 on clear weather.
   const MAX_WEATHER_SURGE = 0.30;
   const weatherSurge = Math.round(
     Math.max(0, (weatherMult - 1) / MAX_WEATHER_SURGE) * 100
   );
-  const weatherSurgeClamped = Math.min(100, weatherSurge);
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-      {/* 1. Network Pressure */}
+      {/* 1. Network Pressure (139% displayed with 150% scale & overload zone) */}
       <OdometerGauge
         value={networkPressure}
-        clampedValue={networkPressureClamped}
+        maxScale={150}
+        capacityThreshold={100}
         label="Network Pressure"
         unit="%"
-        low={60}
-        high={80}
-        critical={95}
+        low={70}
+        high={100}
+        critical={115}
         dataSource="54M ETM Tap-Ins ÷ Fleet Capacity"
         dataNote={
           networkPressure > 100
-            ? `Crush Load: ${boardings.toLocaleString()} vs ${capacity.toLocaleString()} seats`
+            ? `Crush Load: ${boardings.toLocaleString()} vs ${capacity.toLocaleString()} seats (139%)`
             : `${boardings.toLocaleString()} tap-ins at ${currentDemand?.label ?? "08:00"}`
         }
-        statusBadge={networkPressure >= 95 ? "CRITICAL (Crush Load)" : undefined}
+        statusBadge={networkPressure >= 100 ? "CRITICAL (Crush Load)" : undefined}
       />
 
-      {/* 2. Corridor Bottleneck Index */}
+      {/* 2. Corridor Bottleneck Index (72%) */}
       <OdometerGauge
         value={bottleneckIndex}
+        maxScale={100}
         label="Corridor Bottleneck Index"
         unit="%"
         low={40}
@@ -341,9 +360,10 @@ export const GaugeKPIs: React.FC<GaugeKPIsProps> = ({
         statusBadge={bottleneckIndex >= 80 ? "HIGH CONGESTION" : bottleneckIndex >= 65 ? "ELEVATED" : "MODERATE"}
       />
 
-      {/* 3. MTC Fleet Utilization */}
+      {/* 3. MTC Fleet Utilization (92%) */}
       <OdometerGauge
         value={fleetUtilization}
+        maxScale={100}
         label="MTC Fleet Utilization"
         unit="%"
         low={50}
@@ -360,9 +380,10 @@ export const GaugeKPIs: React.FC<GaugeKPIsProps> = ({
         statusBadge={fleetUtilization >= 90 ? "MAX TURNOUT" : fleetUtilization >= 65 ? "NORMAL ACTIVE" : "OFF-PEAK"}
       />
 
-      {/* 4. Weather Surge Pressure */}
+      {/* 4. Weather Surge Pressure (0% in clear weather) */}
       <OdometerGauge
-        value={weatherSurgeClamped}
+        value={weatherSurge}
+        maxScale={100}
         label="Weather Surge Pressure"
         unit="%"
         low={20}
@@ -375,9 +396,9 @@ export const GaugeKPIs: React.FC<GaugeKPIsProps> = ({
             : `Surge active: +${Math.round((weatherMult - 1) * 100)}% transit volume`
         }
         statusBadge={
-          weatherSurgeClamped === 0
+          weatherSurge === 0
             ? "NO SURGE"
-            : weatherSurgeClamped >= 80
+            : weatherSurge >= 80
             ? "MONSOON SURGE"
             : "HEAT SURGE"
         }

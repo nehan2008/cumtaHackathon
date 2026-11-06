@@ -40,7 +40,7 @@ export const FleetDispatchOperations: React.FC<FleetDispatchOperationsProps> = (
   ];
 
   return (
-    <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 shadow-xl flex flex-col h-[520px]">
+    <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 shadow-xl flex flex-col min-h-[520px] h-full justify-between">
       {/* Header */}
       <div className="flex items-center justify-between border-b border-slate-800 pb-3 mb-3 shrink-0">
         <div>
