@@ -17,6 +17,7 @@ import { MultimodalPlanner } from "./components/multimodal/MultimodalPlanner";
 import { UnifiedTicketing } from "./components/ticketing/UnifiedTicketing";
 import { AIPredictionModule } from "./components/analytics/AIPredictionModule";
 import { TransitChatbot } from "./components/chatbot/TransitChatbot";
+import { AuthPage } from "./components/auth/AuthPage";
 import { INITIAL_DRIVER_INCIDENTS } from "./data/initial_incidents";
 import type { DriverIncidentReport } from "./types/communication";
 
@@ -69,6 +70,12 @@ export type PortalType = "landing" | "passenger" | "display" | "control_room";
 export default function App() {
   const [currentPortal, setCurrentPortal] = useState<PortalType>("landing");
   const [weather, setWeather] = useState<ChennaiWeather>(WEATHER_PROFILES.clear);
+
+  // Authentication States for Control Room and PID Display
+  const [controlRoomAuth, setControlRoomAuth] = useState<boolean>(false);
+  const [pidAuth, setPidAuth] = useState<boolean>(false);
+  const [authTarget, setAuthTarget] = useState<"control_room" | "display" | null>(null);
+  const [operatorDetails, setOperatorDetails] = useState<any>(null);
 
   const [currentHour, setCurrentHour] = useState<number>(8); // Default: Morning Peak 08:00
   const [dayType, setDayType] = useState<"weekday" | "weekend">("weekday");
@@ -283,11 +290,60 @@ export default function App() {
     setSimulatorOpen(true);
   };
 
+  // Secure Portal Navigation & Authentication Handlers
+  const handleNavigatePortal = (target: PortalType) => {
+    if (target === "control_room" && !controlRoomAuth) {
+      setAuthTarget("control_room");
+      return;
+    }
+    if (target === "display" && !pidAuth) {
+      setAuthTarget("display");
+      return;
+    }
+    setAuthTarget(null);
+    setCurrentPortal(target);
+  };
+
+  const handleAuthSuccess = (target: "control_room" | "display", userDetails?: any) => {
+    if (target === "control_room") {
+      setControlRoomAuth(true);
+      setOperatorDetails(userDetails);
+      setAuthTarget(null);
+      setCurrentPortal("control_room");
+    } else {
+      setPidAuth(true);
+      setAuthTarget(null);
+      setCurrentPortal("display");
+    }
+  };
+
+  const handleSignOutControlRoom = () => {
+    setControlRoomAuth(false);
+    setOperatorDetails(null);
+    setCurrentPortal("landing");
+  };
+
+  const handleLockPid = () => {
+    setPidAuth(false);
+    setCurrentPortal("landing");
+  };
+
+  // 0. Authentication Gateway (for Control Room and Station PID)
+  if (authTarget !== null) {
+    return (
+      <AuthPage
+        initialTarget={authTarget}
+        onSuccess={handleAuthSuccess}
+        onCancel={() => setAuthTarget(null)}
+      />
+    );
+  }
+
   // 1. Landing Page Portal
   if (currentPortal === "landing") {
     return (
       <LandingPage
-        onSelectPortal={setCurrentPortal}
+        onSelectPortal={handleNavigatePortal}
         weather={weather}
       />
     );
@@ -300,6 +356,7 @@ export default function App() {
         stops={stops}
         weather={weather}
         onExit={() => setCurrentPortal("landing")}
+        onLockTerminal={handleLockPid}
       />
     );
   }
@@ -337,14 +394,14 @@ export default function App() {
             {/* Switch to Other Portals */}
             <div className="flex items-center gap-2">
               <button
-                onClick={() => setCurrentPortal("display")}
+                onClick={() => handleNavigatePortal("display")}
                 className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-amber-300 border border-slate-700 transition flex items-center gap-1.5"
               >
                 <Tv className="w-3.5 h-3.5 text-amber-400" />
                 <span className="hidden sm:inline">Bus Stop Display</span>
               </button>
               <button
-                onClick={() => setCurrentPortal("control_room")}
+                onClick={() => handleNavigatePortal("control_room")}
                 className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-cyan-300 border border-slate-700 transition flex items-center gap-1.5"
               >
                 <Activity className="w-3.5 h-3.5 text-cyan-400" />
@@ -368,8 +425,8 @@ export default function App() {
             corridors={corridors}
             weather={weather}
             currentHour={currentHour}
-            onOpenControlRoom={() => setCurrentPortal("control_room")}
-            onOpenPID={() => setCurrentPortal("display")}
+            onOpenControlRoom={() => handleNavigatePortal("control_room")}
+            onOpenPID={() => handleNavigatePortal("display")}
           />
         </main>
       </div>
@@ -391,7 +448,9 @@ export default function App() {
         setActiveTab={setActiveTab}
         weather={weather}
         onWeatherChange={handleWeatherChange}
-        onNavigatePortal={setCurrentPortal}
+        onNavigatePortal={handleNavigatePortal}
+        onSignOut={handleSignOutControlRoom}
+        operatorName={operatorDetails?.name}
       />
 
       {/* Main Content Area */}

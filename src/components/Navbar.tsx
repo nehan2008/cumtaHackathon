@@ -16,7 +16,9 @@ import {
   Flame,
   Info,
   Radio,
-  X
+  X,
+  Lock,
+  LogOut
 } from "lucide-react";
 import type { ChennaiWeather, WeatherCondition } from "../services/weather";
 
@@ -32,6 +34,8 @@ interface NavbarProps {
   weather: ChennaiWeather;
   onWeatherChange: (cond: WeatherCondition) => void;
   onNavigatePortal: (portal: "landing" | "passenger" | "display" | "control_room") => void;
+  onSignOut?: () => void;
+  operatorName?: string;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -46,6 +50,8 @@ export const Navbar: React.FC<NavbarProps> = ({
   weather,
   onWeatherChange,
   onNavigatePortal,
+  onSignOut,
+  operatorName,
 }) => {
   const [weatherPopoverOpen, setWeatherPopoverOpen] = useState(false);
   const weatherContainerRef = useRef<HTMLDivElement>(null);
@@ -133,6 +139,19 @@ export const Navbar: React.FC<NavbarProps> = ({
             <span>Stop Display</span>
           </button>
         </div>
+
+        {/* Lock Console / Sign Out Button */}
+        {onSignOut && (
+          <button
+            onClick={onSignOut}
+            className="px-2.5 py-1.5 rounded-xl bg-slate-950/80 hover:bg-rose-950/50 text-rose-300 hover:text-rose-200 border border-rose-900/40 transition flex items-center gap-1.5 text-xs font-semibold shrink-0 cursor-pointer shadow-inner"
+            title="Sign Out & Lock Control Room Console"
+          >
+            <Lock className="w-3.5 h-3.5 text-rose-400" />
+            <span className="hidden xl:inline">{operatorName || "Sign Out"}</span>
+            <span className="xl:hidden">Sign Out</span>
+          </button>
+        )}
 
         {/* Compact Hoverable & Clickable Chennai Weather Info Popover Icon */}
         <div

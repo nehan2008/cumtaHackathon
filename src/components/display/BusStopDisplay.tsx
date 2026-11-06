@@ -10,7 +10,8 @@ import {
   Shuffle,
   MapPin,
   RefreshCw,
-  Maximize2
+  Maximize2,
+  Lock
 } from "lucide-react";
 import type { BusStop } from "../../types/api";
 import type { ChennaiWeather } from "../../services/weather";
@@ -19,12 +20,14 @@ interface BusStopDisplayProps {
   stops: BusStop[];
   weather: ChennaiWeather;
   onExit: () => void;
+  onLockTerminal?: () => void;
 }
 
 export const BusStopDisplay: React.FC<BusStopDisplayProps> = ({
   stops,
   weather,
   onExit,
+  onLockTerminal,
 }) => {
   const [selectedHub, setSelectedHub] = useState<string>("GUINDY_INTERCHANGE");
   const [currentTime, setCurrentTime] = useState<Date>(new Date());
@@ -344,6 +347,16 @@ export const BusStopDisplay: React.FC<BusStopDisplayProps> = ({
               >
                 Exit Board
               </button>
+              {onLockTerminal && (
+                <button
+                  onClick={onLockTerminal}
+                  title="Lock PID Terminal Station Display"
+                  className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-rose-950/50 text-xs font-bold text-rose-300 border border-rose-900/40 transition flex items-center gap-1"
+                >
+                  <Lock className="w-3.5 h-3.5" />
+                  <span>Lock PID</span>
+                </button>
+              )}
             </div>
           </div>
         </div>
